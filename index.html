@@ -213,7 +213,7 @@ function showDetail(pin) {
   const panel = document.getElementById('detail-panel');
   const photoUrl = toDirectImageUrl(pin.photo_url);
   let html = `<button class="panel-close" onclick="closeDetail()">×</button>`;
-  if (photoUrl) html += `<img class="panel-photo" src="${photoUrl}" alt=""><div style="font-size:10px;color:#999;padding:4px 16px;word-break:break-all">DEBUG: ${photoUrl}</div>`;
+  if (photoUrl) html += `<img class="panel-photo" src="${photoUrl}" onerror="console.log('IMG ERROR:',this.src)" alt="">`;
   html += `<div class="panel-body">
     <div class="panel-category"><span class="filter-dot" style="background:${getColor(pin.category)}"></span><span style="color:${getColor(pin.category)}">${pin.category}</span></div>
     <div class="panel-title">${pin.title}</div>
@@ -371,16 +371,8 @@ window.addEventListener('DOMContentLoaded', () => {
   initMap();
 
   // Check for saved URL
-  const stored = localStorage.getItem('shimokita-sheet-url');
-  if (stored) {
-    savedUrl = stored;
-    document.getElementById('sheet-url').value = stored;
-    fetchFromSheet(stored);
-  } else {
-    pins = [...SAMPLE_DATA];
-    renderFilters();
-    renderMarkers();
-  }
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSj5ek6RFb_CjP8BnusZJEHi58IkhDR8aaRCIptk5vzkH_U9ycTawKjkOL2yKsKjgt31_3_oMpidlIj/pub?gid=0&single=true&output=csv';
+fetchFromSheet(SHEET_CSV_URL);
   updateModeUI();
 });
 </script>
