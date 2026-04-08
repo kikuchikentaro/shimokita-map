@@ -213,7 +213,7 @@ function showDetail(pin) {
   const panel = document.getElementById('detail-panel');
   const photoUrl = toDirectImageUrl(pin.photo_url);
   let html = `<button class="panel-close" onclick="closeDetail()">×</button>`;
-  if (photoUrl) html += `<img class="panel-photo" src="${photoUrl}" onerror="console.log('IMG ERROR:',this.src)" alt="">`;
+  if (photoUrl) html += `<img class="panel-photo" src="${photoUrl}" alt=""><div style="font-size:10px;color:#999;padding:4px 16px;word-break:break-all">DEBUG: ${photoUrl}</div>`;
   html += `<div class="panel-body">
     <div class="panel-category"><span class="filter-dot" style="background:${getColor(pin.category)}"></span><span style="color:${getColor(pin.category)}">${pin.category}</span></div>
     <div class="panel-title">${pin.title}</div>
