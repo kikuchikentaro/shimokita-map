@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -212,7 +213,7 @@ function showDetail(pin) {
   const panel = document.getElementById('detail-panel');
   const photoUrl = toDirectImageUrl(pin.photo_url);
   let html = `<button class="panel-close" onclick="closeDetail()">×</button>`;
-  if (photoUrl) html += `<img class="panel-photo" src="${photoUrl}" onerror="this.style.display='none'" alt="">`;
+  if (photoUrl) html += `<img class="panel-photo" src="${photoUrl}" onerror="console.log('IMG ERROR:',this.src)" alt="">`;
   html += `<div class="panel-body">
     <div class="panel-category"><span class="filter-dot" style="background:${getColor(pin.category)}"></span><span style="color:${getColor(pin.category)}">${pin.category}</span></div>
     <div class="panel-title">${pin.title}</div>
