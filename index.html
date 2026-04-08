@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -312,7 +313,7 @@ function fetchFromSheet(url) {
           category: row.category || '語りの場所',
           lat: parseFloat(row.lat),
           lng: parseFloat(row.lng),
-          photo_url: row.photo_url || '',
+          photo_url: (row.photo_url || '').trim(),
           created_at: row.created_at || '',
         }));
       if (parsed.length === 0) throw new Error('有効なデータが見つかりませんでした。ヘッダー名を確認してください。');
