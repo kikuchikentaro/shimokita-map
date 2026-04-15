@@ -1,0 +1,30 @@
+[
+  {
+    "id": "pin_1776226381540_p4j48",
+    "title": "2026年のむつ市柳町",
+    "description": "様変わりした賑わっていた通りの端。階段を登ると第一田名部小学校がある。",
+    "category": "風景の変遷",
+    "lat": 41.29844,
+    "lng": 141.21268,
+    "photos": [
+      {
+        "url": "https://raw.githubusercontent.com/kikuchikentaro/shimokita-map/main/photo/test_05.jpg",
+        "caption": "2026年のむつ市柳町"
+      },
+      {
+        "url": "",
+        "caption": ""
+      },
+      {
+        "url": "",
+        "caption": ""
+      },
+      {
+        "url": "",
+        "caption": ""
+      }
+    ],
+    "created_at": "2026-04-15",
+    "_idx": 0
+  }
+]
