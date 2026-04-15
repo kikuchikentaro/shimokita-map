@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>下北半島の生活史マップ CMS</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; background: #F3F4F6; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ===== Header ===== */
+.header { background: #1E3A5F; color: white; padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.header-title { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+.header-sub { font-size: 10px; opacity: 0.6; margin-top: 1px; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+.btn { padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; }
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: #3B82F6; color: white; }
+.btn-success { background: #10B981; color: white; }
+.btn-warning { background: #F59E0B; color: white; }
+.btn-danger { background: #EF4444; color: white; }
+.btn-ghost { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
+.btn-sm { padding: 4px 9px; font-size: 11px; }
+
+/* ===== Layout ===== */
+.layout { flex: 1; display: flex; overflow: hidden; }
+.sidebar { width: 300px; flex-shrink: 0; background: white; border-right: 1px solid #E5E7EB; display: flex; flex-direction: column; overflow: hidden; }
+.editor-area { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* ===== Sidebar ===== */
+.sidebar-header { padding: 12px; border-bottom: 1px solid #E5E7EB; flex-shrink: 0; }
+.search-input { width: 100%; padding: 7px 10px; border: 1px solid #D1D5DB; border-radius: 6px; font-size: 12px; font-family: inherit; }
+.search-input:focus { outline: none; border-color: #3B82F6; }
+.category-filter { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.cat-btn { padding: 2px 8px; border-radius: 10px; font-size: 10px; cursor: pointer; border: 1px solid; transition: all 0.15s; }
+.cat-btn.active { color: white !important; }
+.pin-list { flex: 1; overflow-y: auto; }
+.pin-item { padding: 10px 12px; border-bottom: 1px solid #F3F4F6; cursor: pointer; display: flex; align-items: flex-start; gap: 8px; }
+.pin-item:hover { background: #F9FAFB; }
+.pin-item.active { background: #EFF6FF; border-left: 3px solid #3B82F6; }
+.pin-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.pin-item-title { font-size: 12px; font-weight: 600; color: #111827; line-height: 1.4; }
+.pin-item-cat { font-size: 10px; color: #9CA3AF; margin-top: 2px; }
+.pin-count { font-size: 11px; color: #9CA3AF; padding: 8px 12px; border-top: 1px solid #E5E7EB; flex-shrink: 0; }
+.new-pin-btn { margin: 10px 12px; width: calc(100% - 24px); }
+
+/* ===== Welcome Screen ===== */
+.welcome { background: white; border-radius: 12px; padding: 32px; text-align: center; max-width: 520px; margin: 0 auto; }
+.welcome h2 { font-size: 18px; color: #111827; margin-bottom: 8px; }
+.welcome p { font-size: 13px; color: #6B7280; line-height: 1.7; margin-bottom: 20px; }
+.welcome-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+/* ===== Form ===== */
+.form-card { background: white; border-radius: 12px; padding: 20px; max-width: 720px; margin: 0 auto; }
+.form-title { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; }
+.form-label span { font-weight: 400; color: #9CA3AF; margin-left: 4px; }
+.form-input { width: 100%; padding: 8px 10px; border: 1px solid #D1D5DB; border-radius: 6px; font-size: 13px; font-family: inherit; }
+.form-input:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+textarea.form-input { resize: vertical; min-height: 90px; line-height: 1.6; }
+select.form-input { background: white; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid #F3F4F6; margin-top: 4px; }
+
+/* ===== Coordinate Picker ===== */
+.coord-section { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px; }
+.coord-inputs { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; margin-bottom: 10px; }
+#picker-map { height: 220px; border-radius: 6px; overflow: hidden; border: 1px solid #D1D5DB; }
+.coord-hint { font-size: 11px; color: #6B7280; margin-top: 6px; }
+
+/* ===== Photo Section ===== */
+.photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.photo-slot { border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden; }
+.photo-slot-header { background: #F9FAFB; padding: 8px 10px; font-size: 11px; font-weight: 600; color: #374151; border-bottom: 1px solid #E5E7EB; }
+.photo-slot-body { padding: 10px; }
+.photo-preview { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; display: block; margin-bottom: 6px; }
+.photo-preview-placeholder { width: 100%; height: 100px; background: #F3F4F6; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #D1D5DB; margin-bottom: 6px; }
+.photo-slot-body .form-input { margin-bottom: 6px; font-size: 11px; }
+
+/* ===== Import Modal ===== */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: none; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal { background: white; border-radius: 12px; padding: 24px; max-width: 480px; width: 90%; }
+.modal h3 { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.modal p { font-size: 13px; color: #6B7280; line-height: 1.6; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ===== Toast ===== */
+.toast { position: fixed; bottom: 20px; right: 20px; background: #111827; color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+
+/* ===== Status Bar ===== */
+.statusbar { background: white; border-top: 1px solid #E5E7EB; padding: 5px 18px; font-size: 10px; color: #9CA3AF; display: flex; justify-content: space-between; flex-shrink: 0; }
+
+.divider { height: 1px; background: #F3F4F6; margin: 18px 0; }
+.section-title { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.section-title::before { content: ''; display: block; width: 3px; height: 14px; background: #3B82F6; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <div class="header-title">下北半島の生活史マップ　CMS</div>
+    <div class="header-sub" id="header-status">データを読み込んでいます...</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="showImportModal()">📥 インポート</button>
+    <button class="btn btn-success" onclick="exportJSON()">📤 pins.json を書き出す</button>
+  </div>
+</div>
+
+<!-- Main Layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <input type="text" class="search-input" id="search-input" placeholder="🔍 ピンを検索..." oninput="renderPinList()">
+      <div class="category-filter" id="cat-filter"></div>
+    </div>
+    <button class="btn btn-primary new-pin-btn" onclick="newPin()">＋ 新しいピンを追加</button>
+    <div class="pin-list" id="pin-list"></div>
+    <div class="pin-count" id="pin-count">0 件</div>
+  </div>
+
+  <!-- Editor Area -->
+  <div class="editor-area" id="editor-area">
+    <!-- Welcome or Form will be injected here -->
+  </div>
+
+</div>
+
+<!-- Status Bar -->
+<div class="statusbar">
+  <span>下北半島の生活史プロジェクト｜合同会社まわる社</span>
+  <span id="status-right">localStorageに保存済み</span>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal">
+    <h3>📥 データのインポート</h3>
+    <p>Googleスプレッドシートの最新データを読み込むか、保存済みの <code>pins.json</code> ファイルを読み込みます。</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+      <button class="btn btn-primary" onclick="importFromSheets()">🌐 Google スプレッドシートから読み込む</button>
+      <label class="btn btn-ghost" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB;text-align:center;cursor:pointer;">
+        📂 pins.json ファイルを選択して読み込む
+        <input type="file" accept=".json,.csv" style="display:none" onchange="importFromFile(event)">
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" style="background:#F3F4F6;color:#374151" onclick="closeImportModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CONFIG =====
+var SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSj5ek6RFb_CjP8BnusZJEHi58IkhDR8aaRCIptk5vzkH_U9ycTawKjkOL2yKsKjgt31_3_oMpidlIj/pub?gid=0&single=true&output=csv';
+var STORAGE_KEY = 'shimokita_cms_pins';
+
+var CATEGORIES = ['語りの場所', '風景の変遷', '聞き取り実施', '8mmフィルム'];
+var CATEGORY_COLORS = {
+  '語りの場所': '#3B82F6',
+  '風景の変遷': '#10B981',
+  '聞き取り実施': '#EF4444',
+  '8mmフィルム': '#F59E0B',
+};
+
+// ===== State =====
+var pins = [];
+var currentPinIndex = null; // index in pins[] being edited, or null for new
+var filterCat = 'all';
+var pickerMap = null;
+var pickerMarker = null;
+
+// ===== Helpers =====
+function getColor(cat) { return CATEGORY_COLORS[cat] || '#6B7280'; }
+
+function genId() { return 'pin_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5); }
+
+function today() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function toast(msg, duration) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, duration || 2500);
+}
+
+function setStatus(msg) {
+  document.getElementById('header-status').textContent = msg;
+}
+
+// ===== LocalStorage =====
+function saveToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(pins));
+    document.getElementById('status-right').textContent = 'localStorage に保存済み（' + pins.length + ' 件）';
+  } catch(e) {
+    toast('⚠️ 保存に失敗しました: ' + e.message);
+  }
+}
+
+function loadFromStorage() {
+  var raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return false;
+  try {
+    pins = JSON.parse(raw);
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+// ===== CSV Parsing =====
+function parseCSV(text) {
+  var result = Papa.parse(text, { header: true, skipEmptyLines: true });
+  return result.data
+    .filter(function(row) { return row.title && row.lat && row.lng; })
+    .map(function(row) {
+      var photos = [];
+      for (var i = 1; i <= 4; i++) {
+        var url = (row['photo_url_' + i] || '').trim();
+        var caption = (row['caption_' + i] || '').trim();
+        if (url || caption) photos.push({ url: url, caption: caption });
+        else photos.push({ url: '', caption: '' });
+      }
+      return {
+        id: genId(),
+        title: (row.title || '').trim(),
+        description: (row.description || '').trim(),
+        category: (row.category || '語りの場所').trim(),
+        lat: parseFloat(row.lat),
+        lng: parseFloat(row.lng),
+        photos: photos,
+        created_at: (row.created_at || today()).trim()
+      };
+    });
+}
+
+// ===== Import =====
+function importFromSheets() {
+  closeImportModal();
+  setStatus('Googleスプレッドシートから読み込み中...');
+  fetch(SHEETS_CSV_URL)
+    .then(function(r) { if (!r.ok) throw new Error('読み込み失敗'); return r.text(); })
+    .then(function(text) {
+      var imported = parseCSV(text);
+      if (imported.length === 0) throw new Error('有効なデータが見つかりませんでした');
+      pins = imported;
+      saveToStorage();
+      setStatus(pins.length + ' 件のデータをスプレッドシートから読み込みました');
+      renderPinList();
+      showWelcome();
+      toast('✅ ' + pins.length + ' 件のピンを読み込みました');
+    })
+    .catch(function(e) {
+      setStatus('エラー: ' + e.message);
+      toast('❌ 読み込みに失敗しました: ' + e.message);
+    });
+}
+
+function importFromFile(event) {
+  closeImportModal();
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var text = e.target.result;
+      var imported;
+      if (file.name.endsWith('.json')) {
+        imported = JSON.parse(text);
+        if (!Array.isArray(imported)) throw new Error('JSON形式が正しくありません');
+        // Ensure each pin has an id and photos array
+        imported = imported.map(function(p) {
+          if (!p.id) p.id = genId();
+          if (!p.photos) p.photos = [{url:'',caption:''},{url:'',caption:''},{url:'',caption:''},{url:'',caption:''}];
+          return p;
+        });
+      } else {
+        imported = parseCSV(text);
+      }
+      pins = imported;
+      saveToStorage();
+      setStatus(pins.length + ' 件のデータを読み込みました');
+      renderPinList();
+      showWelcome();
+      toast('✅ ' + pins.length + ' 件のピンを読み込みました');
+    } catch(e) {
+      toast('❌ ファイルの読み込みに失敗: ' + e.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ===== Export =====
+function exportJSON() {
+  if (pins.length === 0) { toast('⚠️ ピンがありません'); return; }
+  var data = JSON.stringify(pins, null, 2);
+  var blob = new Blob([data], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'pins.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('📤 pins.json を書き出しました（' + pins.length + ' 件）');
+}
+
+// ===== Category Filter =====
+function renderCatFilter() {
+  var all = '<button class="cat-btn ' + (filterCat === 'all' ? 'active' : '') + '" style="border-color:#1E3A5F;' + (filterCat === 'all' ? 'background:#1E3A5F;color:white' : 'color:#1E3A5F') + '" onclick="setCatFilter(\'all\')">すべて</button>';
+  var cats = CATEGORIES.map(function(cat) {
+    var c = getColor(cat);
+    var active = filterCat === cat;
+    return '<button class="cat-btn ' + (active ? 'active' : '') + '" style="border-color:' + c + ';' + (active ? 'background:' + c : 'color:' + c) + '" onclick="setCatFilter(\'' + cat + '\')">' + cat + '</button>';
+  }).join('');
+  document.getElementById('cat-filter').innerHTML = all + cats;
+}
+
+function setCatFilter(cat) {
+  filterCat = cat;
+  renderCatFilter();
+  renderPinList();
+}
+
+// ===== Pin List =====
+function renderPinList() {
+  var query = document.getElementById('search-input').value.toLowerCase();
+  var filtered = pins.filter(function(p, i) {
+    if (filterCat !== 'all' && p.category !== filterCat) return false;
+    if (query && p.title.toLowerCase().indexOf(query) === -1 && (p.description || '').toLowerCase().indexOf(query) === -1) return false;
+    p._idx = i;
+    return true;
+  });
+  var html = '';
+  filtered.forEach(function(pin) {
+    var active = currentPinIndex === pin._idx;
+    html += '<div class="pin-item ' + (active ? 'active' : '') + '" onclick="editPin(' + pin._idx + ')">';
+    html += '<span class="pin-dot" style="background:' + getColor(pin.category) + '"></span>';
+    html += '<div><div class="pin-item-title">' + escHtml(pin.title) + '</div>';
+    html += '<div class="pin-item-cat">' + escHtml(pin.category) + '</div></div>';
+    html += '</div>';
+  });
+  if (filtered.length === 0 && pins.length > 0) {
+    html = '<div style="padding:24px;text-align:center;font-size:12px;color:#9CA3AF">該当なし</div>';
+  }
+  document.getElementById('pin-list').innerHTML = html;
+  document.getElementById('pin-count').textContent = filtered.length + ' / ' + pins.length + ' 件';
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== Welcome Screen =====
+function showWelcome() {
+  currentPinIndex = null;
+  renderPinList();
+  document.getElementById('editor-area').innerHTML =
+    '<div class="welcome">' +
+    '<div style="font-size:36px;margin-bottom:12px">🗺️</div>' +
+    '<h2>下北半島の生活史マップ CMS</h2>' +
+    '<p>左のリストからピンを選んで編集するか、<br>「新しいピンを追加」ボタンで追加してください。<br>編集内容は自動的にブラウザに保存されます。<br>完成したら <strong>「pins.json を書き出す」</strong> でファイルを保存し、<br>GitHubリポジトリにアップロードしてください。</p>' +
+    '<div class="welcome-actions">' +
+    '<button class="btn btn-primary" onclick="newPin()">＋ 新しいピンを追加</button>' +
+    '<button class="btn btn-ghost" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB" onclick="showImportModal()">📥 データを読み込む</button>' +
+    '</div>' +
+    (pins.length === 0 ? '<p style="margin-top:20px;font-size:12px;color:#9CA3AF">📌 はじめに「データを読み込む」からGoogleスプレッドシートのデータを取り込んでください</p>' : '') +
+    '</div>';
+}
+
+// ===== Form Rendering =====
+function newPin() {
+  currentPinIndex = null;
+  renderPinList();
+  renderForm(null);
+}
+
+function editPin(idx) {
+  currentPinIndex = idx;
+  renderPinList();
+  renderForm(pins[idx]);
+}
+
+function renderForm(pin) {
+  var isNew = (pin === null);
+  var p = pin || {
+    title: '',
+    description: '',
+    category: '語りの場所',
+    lat: 41.2931,
+    lng: 141.1831,
+    photos: [{url:'',caption:''},{url:'',caption:''},{url:'',caption:''},{url:'',caption:''}],
+    created_at: today()
+  };
+  while (p.photos.length < 4) p.photos.push({url:'',caption:''});
+
+  var catOptions = CATEGORIES.map(function(c) {
+    return '<option value="' + c + '" ' + (p.category === c ? 'selected' : '') + '>' + c + '</option>';
+  }).join('');
+
+  var html = '<div class="form-card">';
+  html += '<div class="form-title">' + (isNew ? '＋ 新しいピンを追加' : '✏️ ピンを編集') + '</div>';
+
+  // Basic fields
+  html += '<div class="section-title">基本情報</div>';
+  html += '<div class="form-group">';
+  html += '<label class="form-label">タイトル <span>必須</span></label>';
+  html += '<input type="text" class="form-input" id="f-title" value="' + escHtml(p.title) + '" placeholder="例：田名部の繁華街の移り変わり">';
+  html += '</div>';
+
+  html += '<div class="form-row">';
+  html += '<div class="form-group"><label class="form-label">カテゴリー</label>';
+  html += '<select class="form-input" id="f-category">' + catOptions + '</select></div>';
+  html += '<div class="form-group"><label class="form-label">登録日</label>';
+  html += '<input type="date" class="form-input" id="f-created_at" value="' + escHtml(p.created_at) + '"></div>';
+  html += '</div>';
+
+  html += '<div class="form-group">';
+  html += '<label class="form-label">説明文 <span>語りの断片（1〜3行）</span></label>';
+  html += '<textarea class="form-input" id="f-description" placeholder="例：かつて田名部の中心街には映画館や商店が並び...">' + escHtml(p.description) + '</textarea>';
+  html += '</div>';
+
+  // Coordinates
+  html += '<div class="divider"></div>';
+  html += '<div class="section-title">場所（緯度・経度）</div>';
+  html += '<div class="coord-section">';
+  html += '<div class="coord-inputs">';
+  html += '<div class="form-group" style="margin:0"><label class="form-label">緯度</label>';
+  html += '<input type="number" class="form-input" id="f-lat" step="0.0001" value="' + p.lat + '" oninput="updatePickerMarker()"></div>';
+  html += '<div class="form-group" style="margin:0"><label class="form-label">経度</label>';
+  html += '<input type="number" class="form-input" id="f-lng" step="0.0001" value="' + p.lng + '" oninput="updatePickerMarker()"></div>';
+  html += '<button class="btn btn-ghost" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB;white-space:nowrap" onclick="locateCurrentPosition()">📍 現在地</button>';
+  html += '</div>';
+  html += '<div id="picker-map"></div>';
+  html += '<div class="coord-hint">🖱️ 地図をクリックして場所を選択できます。ドラッグしてマーカーを移動することもできます。</div>';
+  html += '</div>';
+
+  // Photos
+  html += '<div class="divider"></div>';
+  html += '<div class="section-title">写真（最大4枚）</div>';
+  html += '<div class="photo-grid">';
+  for (var i = 0; i < 4; i++) {
+    var ph = p.photos[i] || {url:'',caption:''};
+    var previewId = 'preview-' + i;
+    html += '<div class="photo-slot">';
+    html += '<div class="photo-slot-header">写真 ' + (i+1) + '</div>';
+    html += '<div class="photo-slot-body">';
+    if (ph.url) {
+      html += '<img id="' + previewId + '" class="photo-preview" src="' + escHtml(ph.url) + '" onerror="this.style.display=\'none\';document.getElementById(\'ph-placeholder-' + i + '\').style.display=\'flex\'">';
+      html += '<div id="ph-placeholder-' + i + '" class="photo-preview-placeholder" style="display:none">🖼️</div>';
+    } else {
+      html += '<div id="' + previewId + '" class="photo-preview-placeholder">🖼️</div>';
+    }
+    html += '<input type="text" class="form-input" id="f-photo-' + i + '" value="' + escHtml(ph.url) + '" placeholder="https://..." oninput="updatePhotoPreview(' + i + ')">';
+    html += '<input type="text" class="form-input" id="f-caption-' + i + '" value="' + escHtml(ph.caption) + '" placeholder="キャプション（任意）">';
+    html += '</div></div>';
+  }
+  html += '</div>';
+
+  // Actions
+  html += '<div class="form-actions">';
+  if (!isNew) {
+    html += '<button class="btn btn-danger" onclick="deletePin()">🗑️ 削除</button>';
+  }
+  html += '<button class="btn" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB" onclick="showWelcome()">キャンセル</button>';
+  html += '<button class="btn btn-primary" onclick="savePin()">💾 保存</button>';
+  html += '</div>';
+
+  html += '</div>';
+
+  document.getElementById('editor-area').innerHTML = html;
+  initPickerMap(p.lat, p.lng);
+}
+
+// ===== Photo Preview =====
+function updatePhotoPreview(idx) {
+  var url = document.getElementById('f-photo-' + idx).value.trim();
+  var previewEl = document.getElementById('preview-' + idx);
+  if (url) {
+    if (previewEl.tagName === 'IMG') {
+      previewEl.src = url;
+      previewEl.style.display = 'block';
+    } else {
+      var img = document.createElement('img');
+      img.id = 'preview-' + idx;
+      img.className = 'photo-preview';
+      img.src = url;
+      img.onerror = function() { this.style.display = 'none'; };
+      previewEl.parentNode.replaceChild(img, previewEl);
+    }
+  } else {
+    if (previewEl.tagName === 'IMG') {
+      var placeholder = document.createElement('div');
+      placeholder.id = 'preview-' + idx;
+      placeholder.className = 'photo-preview-placeholder';
+      placeholder.textContent = '🖼️';
+      previewEl.parentNode.replaceChild(placeholder, previewEl);
+    }
+  }
+}
+
+// ===== Coordinate Picker Map =====
+function initPickerMap(lat, lng) {
+  setTimeout(function() {
+    var container = document.getElementById('picker-map');
+    if (!container) return;
+    pickerMap = L.map('picker-map').setView([lat, lng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(pickerMap);
+
+    pickerMarker = L.marker([lat, lng], { draggable: true }).addTo(pickerMap);
+    pickerMarker.on('dragend', function(e) {
+      var ll = e.target.getLatLng();
+      document.getElementById('f-lat').value = ll.lat.toFixed(5);
+      document.getElementById('f-lng').value = ll.lng.toFixed(5);
+    });
+
+    pickerMap.on('click', function(e) {
+      var ll = e.latlng;
+      document.getElementById('f-lat').value = ll.lat.toFixed(5);
+      document.getElementById('f-lng').value = ll.lng.toFixed(5);
+      pickerMarker.setLatLng(ll);
+    });
+  }, 50);
+}
+
+function updatePickerMarker() {
+  var lat = parseFloat(document.getElementById('f-lat').value);
+  var lng = parseFloat(document.getElementById('f-lng').value);
+  if (!isNaN(lat) && !isNaN(lng) && pickerMarker && pickerMap) {
+    pickerMarker.setLatLng([lat, lng]);
+    pickerMap.setView([lat, lng]);
+  }
+}
+
+function locateCurrentPosition() {
+  if (!navigator.geolocation) { toast('⚠️ 位置情報が利用できません'); return; }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    var lat = pos.coords.latitude.toFixed(5);
+    var lng = pos.coords.longitude.toFixed(5);
+    document.getElementById('f-lat').value = lat;
+    document.getElementById('f-lng').value = lng;
+    updatePickerMarker();
+    toast('📍 現在地を設定しました');
+  }, function() {
+    toast('⚠️ 位置情報の取得に失敗しました');
+  });
+}
+
+// ===== Save / Delete =====
+function savePin() {
+  var title = document.getElementById('f-title').value.trim();
+  if (!title) { toast('⚠️ タイトルを入力してください'); document.getElementById('f-title').focus(); return; }
+  var lat = parseFloat(document.getElementById('f-lat').value);
+  var lng = parseFloat(document.getElementById('f-lng').value);
+  if (isNaN(lat) || isNaN(lng)) { toast('⚠️ 緯度・経度を正しく入力してください'); return; }
+
+  var photos = [];
+  for (var i = 0; i < 4; i++) {
+    photos.push({
+      url: (document.getElementById('f-photo-' + i).value || '').trim(),
+      caption: (document.getElementById('f-caption-' + i).value || '').trim()
+    });
+  }
+
+  var pinData = {
+    id: (currentPinIndex !== null ? pins[currentPinIndex].id : genId()),
+    title: title,
+    description: document.getElementById('f-description').value.trim(),
+    category: document.getElementById('f-category').value,
+    lat: lat,
+    lng: lng,
+    photos: photos,
+    created_at: document.getElementById('f-created_at').value || today()
+  };
+
+  if (currentPinIndex !== null) {
+    pins[currentPinIndex] = pinData;
+    toast('✅ 保存しました');
+  } else {
+    pins.push(pinData);
+    currentPinIndex = pins.length - 1;
+    toast('✅ 追加しました');
+  }
+
+  saveToStorage();
+  setStatus(pins.length + ' 件のピンが保存されています');
+  renderPinList();
+}
+
+function deletePin() {
+  if (currentPinIndex === null) return;
+  var title = pins[currentPinIndex].title;
+  if (!confirm('「' + title + '」を削除しますか？この操作は元に戻せません。')) return;
+  pins.splice(currentPinIndex, 1);
+  currentPinIndex = null;
+  saveToStorage();
+  renderPinList();
+  showWelcome();
+  toast('🗑️ 削除しました');
+}
+
+// ===== Modal =====
+function showImportModal() { document.getElementById('import-modal').classList.add('active'); }
+function closeImportModal() { document.getElementById('import-modal').classList.remove('active'); }
+document.getElementById('import-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeImportModal();
+});
+
+// ===== Init =====
+(function init() {
+  renderCatFilter();
+  if (loadFromStorage() && pins.length > 0) {
+    setStatus(pins.length + ' 件のピン（localStorageから読み込み済み）');
+    renderPinList();
+    showWelcome();
+  } else {
+    setStatus('データなし — スプレッドシートから読み込んでください');
+    renderPinList();
+    showWelcome();
+    // Auto-import if no local data
+    setTimeout(function() {
+      importFromSheets();
+    }, 500);
+  }
+})();
+</script>
+</body>
+</html>

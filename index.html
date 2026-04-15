@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -117,6 +116,7 @@ body { font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; hei
 <script>
 // ===== CONFIG =====
 var SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSj5ek6RFb_CjP8BnusZJEHi58IkhDR8aaRCIptk5vzkH_U9ycTawKjkOL2yKsKjgt31_3_oMpidlIj/pub?gid=0&single=true&output=csv';
+var PINS_JSON_URL = './pins.json'; // CMSで書き出したpins.json（存在すれば優先）
 
 // ===== State =====
 var pins = [];
@@ -147,6 +147,7 @@ function markerIcon(color) {
 }
 
 function parsePhotos(row) {
+  // CSV行（photo_url_1〜4形式）からphoto配列を生成
   var photos = [];
   for (var i = 1; i <= 4; i++) {
     var url = (row['photo_url_' + i] || '').trim();
@@ -344,6 +345,44 @@ function toggleView() {
 }
 
 // ===== Data Loading =====
+function applyPins(parsed, source) {
+  if (parsed.length === 0) throw new Error('有効なデータが見つかりませんでした');
+  pins = parsed;
+  document.getElementById('mode-label').textContent = pins.length + ' 件 (' + source + ')';
+  renderFilters();
+  renderMarkers();
+}
+
+function fetchFromJSON(url) {
+  document.getElementById('loading').style.display = 'flex';
+  return fetch(url + '?v=' + Date.now())
+    .then(function(resp) {
+      if (!resp.ok) throw new Error('not found');
+      return resp.json();
+    })
+    .then(function(data) {
+      if (!Array.isArray(data) || data.length === 0) throw new Error('empty');
+      var parsed = data
+        .filter(function(p) { return p.title && p.lat && p.lng; })
+        .map(function(p) {
+          var photos = Array.isArray(p.photos) ? p.photos : [];
+          while (photos.length < 4) photos.push({url:'',caption:''});
+          return {
+            title: (p.title || '').trim(),
+            description: (p.description || '').trim(),
+            category: (p.category || '語りの場所').trim(),
+            lat: parseFloat(p.lat),
+            lng: parseFloat(p.lng),
+            photos: photos.filter(function(ph){ return ph.url; }),
+            created_at: (p.created_at || '').trim()
+          };
+        });
+      applyPins(parsed, 'CMS管理データ');
+      document.getElementById('loading').style.display = 'none';
+      return true;
+    });
+}
+
 function fetchFromSheet(url) {
   document.getElementById('loading').style.display = 'flex';
   fetch(url)
@@ -366,11 +405,7 @@ function fetchFromSheet(url) {
             created_at: (row.created_at || '').trim()
           };
         });
-      if (parsed.length === 0) throw new Error('有効なデータが見つかりませんでした');
-      pins = parsed;
-      document.getElementById('mode-label').textContent = pins.length + ' 件のデータを読み込みました';
-      renderFilters();
-      renderMarkers();
+      applyPins(parsed, 'スプレッドシート');
     })
     .catch(function(e) {
       document.getElementById('mode-label').textContent = 'エラー: ' + e.message;
@@ -381,13 +416,16 @@ function fetchFromSheet(url) {
 }
 
 function reloadData() {
-  fetchFromSheet(SHEET_CSV_URL);
+  // pins.jsonを優先し、なければスプレッドシートにフォールバック
+  fetchFromJSON(PINS_JSON_URL).catch(function() {
+    fetchFromSheet(SHEET_CSV_URL);
+  });
 }
 
 // ===== Init =====
 window.addEventListener('DOMContentLoaded', function() {
   initMap();
-  fetchFromSheet(SHEET_CSV_URL);
+  reloadData();
 });
 </script>
 </body>
