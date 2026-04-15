@@ -24,8 +24,7 @@
         "caption": ""
       }
     ],
-    "created_at": "2026-04-07",
-    "_idx": 0
+    "created_at": "2026-04-07"
   },
   {
     "id": "pin_legacy_002",
@@ -52,8 +51,7 @@
         "caption": ""
       }
     ],
-    "created_at": "2026-04-07",
-    "_idx": 1
+    "created_at": "2026-04-07"
   },
   {
     "id": "pin_legacy_003",
@@ -80,8 +78,7 @@
         "caption": ""
       }
     ],
-    "created_at": "2026-03-27",
-    "_idx": 2
+    "created_at": "2026-03-27"
   },
   {
     "id": "pin_1776226381540_p4j48",
@@ -108,7 +105,33 @@
         "caption": ""
       }
     ],
-    "created_at": "2026-04-15",
-    "_idx": 3
+    "created_at": "2026-04-15"
+  },
+  {
+    "id": "pin_1776229739150_cr8sh",
+    "title": "1960年代 城ヶ沢海岸",
+    "description": "",
+    "category": "風景の変遷",
+    "lat": 41.225938,
+    "lng": 141.131251,
+    "photos": [
+      {
+        "url": "https://raw.githubusercontent.com/kikuchikentaro/shimokita-map/main/photo/test_06_1776229727297.jpg",
+        "caption": "城ヶ沢海岸に打ち上げられたサメ"
+      },
+      {
+        "url": "",
+        "caption": ""
+      },
+      {
+        "url": "",
+        "caption": ""
+      },
+      {
+        "url": "",
+        "caption": ""
+      }
+    ],
+    "created_at": "2026-04-15"
   }
 ]
