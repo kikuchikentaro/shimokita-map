@@ -1,5 +1,50 @@
 [
   {
+    "id": "pin_legacy_001",
+    "title": "田名部の繁華街の移り変わり",
+    "description": "かつて田名部の中心街には映画館や商店が並び買い物客で賑わっていた。現在は多くの店舗が閉じ人通りもまばらになっている。",
+    "category": "風景の変遷",
+    "lat": 41.2886,
+    "lng": 141.1857,
+    "photos": [
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" }
+    ],
+    "created_at": "2026-04-07"
+  },
+  {
+    "id": "pin_legacy_002",
+    "title": "バイパスと田んぼ——道路ができる前の風景",
+    "description": "いまバイパスが走っているこの一帯はかつて一面の田んぼだった。道路建設に関わった住民の証言や風景の変化を見てきた人々の記憶がここにある。",
+    "category": "風景の変遷",
+    "lat": 41.2780,
+    "lng": 141.1950,
+    "photos": [
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" }
+    ],
+    "created_at": "2026-04-07"
+  },
+  {
+    "id": "pin_legacy_003",
+    "title": "ある女性の記憶——むつで暮らした70年",
+    "description": "2026年3月むつ市在住の70代女性に試験的な聞き取りを行った。この土地で生まれ育ち家族を持ち暮らしを重ねてきた一人の生活史。",
+    "category": "聞き取り実施",
+    "lat": 41.2910,
+    "lng": 141.1780,
+    "photos": [
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" }
+    ],
+    "created_at": "2026-03-27"
+  },
+  {
     "id": "pin_1776226381540_p4j48",
     "title": "2026年のむつ市柳町",
     "description": "様変わりした賑わっていた通りの端。階段を登ると第一田名部小学校がある。",
@@ -11,20 +56,10 @@
         "url": "https://raw.githubusercontent.com/kikuchikentaro/shimokita-map/main/photo/test_05.jpg",
         "caption": "2026年のむつ市柳町"
       },
-      {
-        "url": "",
-        "caption": ""
-      },
-      {
-        "url": "",
-        "caption": ""
-      },
-      {
-        "url": "",
-        "caption": ""
-      }
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" },
+      { "url": "", "caption": "" }
     ],
-    "created_at": "2026-04-15",
-    "_idx": 0
+    "created_at": "2026-04-15"
   }
 ]
